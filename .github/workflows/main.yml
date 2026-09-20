@@ -21,9 +21,6 @@ env:
   CHART_PATH: ./helm/devops-app
 
 jobs:
-  # ============================================================
-  # BUILD + PUSH API / WORKER
-  # ============================================================
   build:
     name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
@@ -84,9 +81,6 @@ jobs:
           docker buildx imagetools inspect \
             "${{ steps.image.outputs.name }}:${GITHUB_SHA}"
 
-  # ============================================================
-  # DEPLOY WITH HELM
-  # ============================================================
   deploy:
     name: Deploy with Helm
     runs-on: self-hosted
@@ -98,18 +92,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # --------------------------------------------------------
-      # MAC PATH
-      # --------------------------------------------------------
       - name: Configure PATH
         shell: bash
         run: |
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
           echo "/usr/local/bin" >> "$GITHUB_PATH"
 
-      # --------------------------------------------------------
-      # CHECK TOOLS / CLUSTER
-      # --------------------------------------------------------
       - name: Check tools and cluster
         shell: bash
         run: |
@@ -128,9 +116,6 @@ jobs:
           echo "=== Nodes ==="
           kubectl get nodes
 
-      # --------------------------------------------------------
-      # WAIT FOR NGINX INGRESS
-      # --------------------------------------------------------
       - name: Wait for ingress controller
         shell: bash
         run: |
@@ -140,9 +125,6 @@ jobs:
             deployment/ingress-nginx-controller \
             --timeout=180s
 
-      # --------------------------------------------------------
-      # PRIVATE GHCR CREDENTIALS
-      # --------------------------------------------------------
       - name: Create GHCR pull secret
         shell: bash
         env:
@@ -158,9 +140,6 @@ jobs:
             -o yaml \
             | kubectl apply -f -
 
-      # --------------------------------------------------------
-      # CALCULATE IMAGE NAMES
-      # --------------------------------------------------------
       - name: Prepare image values
         shell: bash
         run: |
@@ -175,9 +154,6 @@ jobs:
           echo "API: $API_REPOSITORY:$GITHUB_SHA"
           echo "Worker: $WORKER_REPOSITORY:$GITHUB_SHA"
 
-      # --------------------------------------------------------
-      # HELM VALIDATION
-      # --------------------------------------------------------
       - name: Helm lint
         shell: bash
         run: |
@@ -196,9 +172,6 @@ jobs:
 
           echo "Helm chart rendered successfully"
 
-      # --------------------------------------------------------
-      # HELM DEPLOY
-      # --------------------------------------------------------
       - name: Deploy Helm release
         shell: bash
         run: |
@@ -209,13 +182,10 @@ jobs:
             --set-string api.image.tag="$GITHUB_SHA" \
             --set-string worker.image.repository="$WORKER_REPOSITORY" \
             --set-string worker.image.tag="$GITHUB_SHA" \
-            --atomic \
+            --rollback-on-failure \
             --wait \
             --timeout 5m
 
-      # --------------------------------------------------------
-      # RESULT
-      # --------------------------------------------------------
       - name: Show Helm release
         shell: bash
         run: |

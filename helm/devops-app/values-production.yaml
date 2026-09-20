@@ -23,15 +23,15 @@ api:
       memory: 512Mi
   probes:
     startup:
-      path: /health
+      path: /healthz
       failureThreshold: 30
       periodSeconds: 5
     liveness:
-      path: /health
+      path: /healthz
       initialDelaySeconds: 10
       periodSeconds: 10
     readiness:
-      path: /db-check
+      path: /readyz
       initialDelaySeconds: 5
       periodSeconds: 5
   autoscaling:
