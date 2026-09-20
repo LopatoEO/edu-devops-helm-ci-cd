@@ -228,12 +228,12 @@ jobs:
 
           echo
           echo "=== API image ==="
-          kubectl get deployment api \
+          kubectl get deployment "${RELEASE_NAME}-api" \
             --namespace "$NAMESPACE" \
             -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 
           echo
           echo "=== Worker image ==="
-          kubectl get deployment worker \
+          kubectl get deployment "${RELEASE_NAME}-worker" \
             --namespace "$NAMESPACE" \
             -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
