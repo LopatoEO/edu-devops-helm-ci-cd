@@ -1,28 +1,26 @@
-nameOverride: ""
-fullnameOverride: ""
-
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-pull-secret
 
 api:
-  replicaCount: 2
+  replicaCount: 3
   image:
-    repository: ghcr.io/lopatoeo/devops-2-api
-    tag: latest
+    repository: ghcr.io/lopatoeo/edu-devops-helm-ci-cd-api
+    tag: "2026.08.17"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8000
-  eventsCacheTtl: "30"
+  eventsCacheTtl: "60"
   strategy:
     maxUnavailable: 0
     maxSurge: 1
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
+      cpu: 250m
       memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
   probes:
     startup:
       path: /healthz
@@ -37,20 +35,24 @@ api:
       initialDelaySeconds: 5
       periodSeconds: 5
   autoscaling:
-    enabled: false
+    enabled: true
     minReplicas: 2
-    maxReplicas: 5
-    targetCPUUtilizationPercentage: 50
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 60
   ingress:
     enabled: true
-    className: traefik
-    annotations: {}
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
     hosts:
-      - host: ""
+      - host: api.example.com
         paths:
-          - path: /
+          - path: /api
             pathType: Prefix
-    tls: []
+    tls:
+      - hosts:
+          - api.example.com
+        secretName: api-example-tls
   podAnnotations: {}
   podLabels: {}
   podSecurityContext: {}
@@ -63,18 +65,18 @@ api:
     runAsUser: 10001
 
 worker:
-  replicaCount: 1
+  replicaCount: 2
   image:
-    repository: ghcr.io/lopatoeo/devops-2-worker
-    tag: latest
+    repository: ghcr.io/lopatoeo/edu-devops-helm-ci-cd-worker
+    tag: "2026.08.17"
     pullPolicy: IfNotPresent
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
+      cpu: 200m
       memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
   podAnnotations: {}
   podLabels: {}
   podSecurityContext: {}
@@ -95,20 +97,20 @@ postgresql:
   auth:
     username: app
     database: app
-    password: change-me
+    password: ""
   secret:
-    create: true
-    existingSecret: ""
+    create: false
+    existingSecret: postgres-auth
   persistence:
     enabled: true
-    size: 5Gi
+    size: 20Gi
     storageClass: ""
     accessModes:
       - ReadWriteOnce
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 250m
+      memory: 512Mi
     limits:
       cpu: "1"
       memory: 1Gi
@@ -121,14 +123,14 @@ redis:
   port: 6379
   persistence:
     enabled: true
-    size: 1Gi
+    size: 5Gi
     storageClass: ""
     accessModes:
       - ReadWriteOnce
   resources:
     requests:
-      cpu: 50m
-      memory: 64Mi
+      cpu: 100m
+      memory: 128Mi
     limits:
       cpu: 500m
-      memory: 256Mi
+      memory: 512Mi
